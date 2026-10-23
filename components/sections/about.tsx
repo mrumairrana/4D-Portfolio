@@ -40,8 +40,8 @@ export const About: FC = () => {
         eyebrow="About"
         title={
           <>
-            Engineering products that{" "}
-            <span className="text-gradient">people actually use.</span>
+            Building Digital Solutions That{" "}
+            <span className="text-gradient">Make a Difference.</span>
           </>
         }
       />
