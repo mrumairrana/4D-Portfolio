@@ -48,10 +48,21 @@ export const About: FC = () => {
 
       <div className="mt-12 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <AboutBio />
-        <div className="grid grid-cols-2 gap-4 lg:col-span-5">
-          {STATS.map((stat, index) => (
-            <AboutStatCard key={stat.label} {...stat} index={index} />
-          ))}
+        <div className="flex flex-col gap-6 lg:col-span-5">
+          <motion.img
+            src="/assets/UR.png"
+            alt="Umair Rana"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="w-full max-w-[325px] mx-auto rounded-2xl shadow-2xl"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            {STATS.map((stat, index) => (
+              <AboutStatCard key={stat.label} {...stat} index={index} />
+            ))}
+          </div>
         </div>
       </div>
 

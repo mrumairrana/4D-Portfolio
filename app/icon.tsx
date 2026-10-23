@@ -25,12 +25,12 @@ export default function Icon() {
             color: "white",
             fontFamily: "system-ui, sans-serif",
             fontWeight: 800,
-            fontSize: 23,
+            fontSize: 20,
             lineHeight: 1,
             letterSpacing: -1,
           }}
         >
-          H
+          UR
         </div>
       </div>
     ),

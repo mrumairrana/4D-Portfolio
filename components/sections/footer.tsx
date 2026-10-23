@@ -35,7 +35,7 @@ export const Footer: FC = () => {
         <div>
           <div className="flex items-center gap-2 text-base font-semibold tracking-tight text-white">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-royal to-coral text-white text-sm font-black">
-              H
+              UR
             </span>
             <span>{HERO_NAME}</span>
           </div>
