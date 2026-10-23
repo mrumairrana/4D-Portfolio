@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { CONTACT_EMAIL } from "@/constants/portfolio-constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,60 +41,64 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Payload too large." }, { status: 413 });
   }
 
-  if (!isSupabaseConfigured) {
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+  const serviceId = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+
+  console.log("EmailJS Config:", {
+    hasPublicKey: !!publicKey,
+    hasPrivateKey: !!privateKey,
+    hasServiceId: !!serviceId,
+    hasTemplateId: !!templateId,
+  });
+
+  if (!publicKey || !privateKey || !serviceId || !templateId) {
     return NextResponse.json(
-      {
-        error: `The contact form is not connected on this deployment. Please email ${CONTACT_EMAIL} directly.`,
-      },
+      { error: "EmailJS is not configured. Please add environment variables." },
       { status: 503 }
     );
   }
 
-  const supabase = await createClient();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: `Please email ${CONTACT_EMAIL} directly.` },
-      { status: 503 }
-    );
-  }
-
-  const forwarded = req.headers.get("x-forwarded-for") ?? "";
-  const ip = forwarded.split(",")[0]?.trim() || null;
-  const userAgent = req.headers.get("user-agent") ?? null;
-
-  const { error: dbError } = await supabase
-    .from("contact_submissions")
-    .insert({
-      name,
-      email,
-      budget: budget || null,
-      message,
-      user_agent: userAgent,
-      ip_address: ip,
-    });
-
-  if (dbError) {
-    console.error("Supabase insert failed:", {
-      message: dbError.message,
-      code: dbError.code,
-      hint: dbError.hint,
-    });
-
-    const tableMissing =
-      dbError.code === "42P01" ||
-      dbError.code === "PGRST205" ||
-      /relation .* does not exist/i.test(dbError.message || "") ||
-      /could not find the table/i.test(dbError.message || "");
-
-    return NextResponse.json(
-      {
-        error: tableMissing
-          ? "The database is connected but not set up yet. Run supabase/migrations/0001_init.sql in the Supabase SQL editor."
-          : "Could not save your message. Please try again.",
+  try {
+    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: publicKey,
+        accessToken: privateKey,
+        template_params: {
+          from_name: name,
+          from_email: email,
+          budget: budget || "Not specified",
+          message: message,
+          to_email: process.env.EMAILJS_TO_EMAIL || email,
+          current_date: new Date().toLocaleDateString(),
+        },
+      }),
+    });
+
+    const responseData = await response.text();
+
+    if (!response.ok) {
+      console.error("EmailJS API error:", responseData);
+      return NextResponse.json(
+        { error: `Failed to send email: ${responseData}` },
+        { status: response.status }
+      );
+    }
+
+    console.log("Email sent successfully:", responseData);
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (error: any) {
+    console.error("EmailJS error:", error);
+    return NextResponse.json(
+      { error: `Failed to send email: ${error?.message || "Unknown error"}` },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ ok: true }, { status: 200 });
 }
